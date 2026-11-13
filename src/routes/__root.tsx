@@ -14,6 +14,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 import { RouteProgress } from "@/components/shared/route-progress";
 import { NotFoundPage } from "@/components/shared/not-found-page";
+import { Analytics } from "@vercel/analytics/react"
 
 // Absolute URL is required for social previews (set VITE_SITE_URL).
 const OG_IMAGE = `${SITE_URL}/logo/hoonext-logo-desktop.png`;
@@ -138,6 +139,7 @@ function RootComponent() {
         <RouteProgress />
         <Outlet />
         <Toaster />
+        <Analytics />
       </AuthProvider>
     </QueryClientProvider>
   );
