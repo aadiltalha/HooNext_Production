@@ -3,7 +3,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { LogOut, ShieldCheck, Menu } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useNavBadges } from "@/hooks/use-nav-badges";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { RealtimeSync } from "@/components/shared/realtime-sync";
 import { Sheet, SheetContent, SheetClose } from "@/components/ui/sheet";
@@ -14,8 +15,20 @@ export interface NavItem {
   icon?: React.ComponentType<{ className?: string }>;
 }
 
+/** Unread-count pill shown on a sidebar item. */
+function NavBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="ml-auto inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--brand-cyan),var(--brand-violet))] px-1.5 text-[10px] font-semibold leading-none text-background">
+      {count > 99 ? "99+" : count}
+      <span className="sr-only"> unread</span>
+    </span>
+  );
+}
+
 function SidebarContent({
   nav,
+  badges,
   brandHref,
   brandLabel,
   pathname,
@@ -25,6 +38,7 @@ function SidebarContent({
   onSignOut,
 }: {
   nav: NavItem[];
+  badges: Record<string, number>;
   brandHref: string;
   brandLabel: string;
   pathname: string;
@@ -60,6 +74,7 @@ function SidebarContent({
             >
               {n.icon && <n.icon className={cn("h-4 w-4", active && "text-primary")} />}
               {n.label}
+              <NavBadge count={badges[n.to] ?? 0} />
             </Link>
           );
         })}
@@ -113,6 +128,16 @@ export function DashShell({
   const isAdminShell = brandHref === "/admin";
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  // Unread notifications per sidebar item (see use-nav-badges).
+  const navPaths = useMemo(() => nav.map((n) => n.to), [nav]);
+  const { counts: badges, total: totalUnread } = useNavBadges({
+    audience: isAdminShell ? "admin" : "user",
+    navPaths,
+    homePath: brandHref,
+    notificationsPath: `${brandHref}/notifications`,
+    pathname,
+  });
+
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/" });
@@ -124,6 +149,7 @@ export function DashShell({
       <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
         <SidebarContent
           nav={nav}
+          badges={badges}
           brandHref={brandHref}
           brandLabel={brandLabel}
           pathname={pathname}
@@ -139,6 +165,7 @@ export function DashShell({
         >
           <SidebarContent
             nav={nav}
+            badges={badges}
             brandHref={brandHref}
             brandLabel={brandLabel}
             pathname={pathname}
@@ -154,10 +181,18 @@ export function DashShell({
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setMobileNavOpen(true)}
-              className="md:hidden -ml-1.5 inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
-              aria-label="Open navigation"
+              className="relative md:hidden -ml-1.5 inline-flex items-center justify-center rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
+              aria-label={
+                totalUnread > 0 ? "Open navigation (you have unread notifications)" : "Open navigation"
+              }
             >
               <Menu className="h-5 w-5" />
+              {totalUnread > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[linear-gradient(135deg,var(--brand-cyan),var(--brand-violet))] ring-2 ring-background"
+                />
+              )}
             </button>
             <div className="min-w-0">
               <h1 className="text-lg font-semibold tracking-tight truncate">{title}</h1>

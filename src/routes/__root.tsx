@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
+  type ErrorComponentProps,
   createRootRouteWithContext,
   useRouter,
   HeadContent,
@@ -19,7 +20,7 @@ import { Analytics } from "@vercel/analytics/react"
 // Absolute URL is required for social previews (set VITE_SITE_URL).
 const OG_IMAGE = `${SITE_URL}/logo/hoonext-logo-desktop.png`;
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   return (
@@ -86,16 +87,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
       { rel: "stylesheet", href: appCss },
 
-      // Paddle: open connections early so the checkout form appears sooner.
-      { rel: "preconnect", href: "https://cdn.paddle.com", crossOrigin: "" },
-      {
-        rel: "preconnect",
-        href:
-          import.meta.env.VITE_PADDLE_ENV === "production"
-            ? "https://buy.paddle.com"
-            : "https://sandbox-buy.paddle.com",
-        crossOrigin: "",
-      },
+      // Razorpay: open connections early so the checkout form appears sooner.
+      { rel: "preconnect", href: "https://checkout.razorpay.com", crossOrigin: "" },
+      { rel: "preconnect", href: "https://api.razorpay.com", crossOrigin: "" },
 
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
 
